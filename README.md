@@ -126,3 +126,68 @@ La estructura de la base de datos diseñada para el reto corresponde a los sigui
 elementos:
 
 ![jerarquia](./images/jerarquia_db.webp)
+
+## Creación de Tablas
+
+- CREATE
+- ALTER
+- DROP
+
+```sql
+-- create database
+CREATE DATABASE transporte
+    WITH
+    OWNER = luis
+    ENCODING = 'UTF8'
+    CONNECTION LIMIT = -1;
+
+-- create table
+CREATE TABLE IF NOT EXISTS public.passenger
+(
+    id bigserial NOT NULL,
+    name character varying(100),
+    address character varying,
+    birthdate date,
+    CONSTRAINT passenger_pkey PRIMARY KEY (id)
+);
+
+ALTER TABLE public.passenger
+    OWNER to luis;
+
+-- insert script
+INSERT INTO public.passenger(
+  id, name, address, birthdate)
+  VALUES (?, ?, ?, ?);
+```
+
+Obtener fecha actual
+
+```sql
+SELECT current_date;
+```
+
+### Reto
+
+crear el resto de las tablas del diagrama
+
+```sql
+CREATE TABLE IF NOT EXISTS train(
+  id bigserial NOT NULL,
+  model character varying(100),
+  capacity integer,
+  CONSTRAINT train_pkey PRIMARY KEY (id)
+);
+
+CREATE TABLE station(
+  id bigserial NOT NULL,
+  name CHARACTER VARYING(100),
+  address CHARACTER VARYING,
+  CONSTRAINT station_pkey PRIMARY KEY(id)
+);
+
+CREATE TABLE trip(
+  id BIGSERIAL NOT NULL,
+  FOREIGN KEY (passenger_id) REFERENCES passenger(id),
+  CONSTRAINT trip_pkey PRIMARY KEY (id),
+);
+```
