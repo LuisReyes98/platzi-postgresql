@@ -178,16 +178,140 @@ CREATE TABLE IF NOT EXISTS train(
   CONSTRAINT train_pkey PRIMARY KEY (id)
 );
 
-CREATE TABLE station(
+CREATE TABLE IF NOT EXISTS station(
   id bigserial NOT NULL,
   name CHARACTER VARYING(100),
   address CHARACTER VARYING,
   CONSTRAINT station_pkey PRIMARY KEY(id)
 );
 
-CREATE TABLE trip(
+-- viaje
+CREATE TABLE IF NOT EXISTS trip(
   id BIGSERIAL NOT NULL,
+  passenger_id INTEGER,
   FOREIGN KEY (passenger_id) REFERENCES passenger(id),
-  CONSTRAINT trip_pkey PRIMARY KEY (id),
+  CONSTRAINT trip_pkey PRIMARY KEY (id)
 );
+
+-- trayecto
+CREATE TABLE IF NOT EXISTS journey(
+  id BIGSERIAL NOT NULL,
+  name CHARACTER VARYING(100),
+  station_id INTEGER,
+  train_id INTEGER,
+  FOREIGN KEY (station_id) REFERENCES station(id),
+  FOREIGN KEY (train_id) REFERENCES train(id),
+  CONSTRAINT journey_pkey PRIMARY KEY (id)
+);
+
+-- journey & trip many to many relationship
+CREATE TABLE IF NOT EXISTS journey__trip__relation(
+  id BIGSERIAL NOT NULL,
+  journey_id INTEGER,
+  trip_id INTEGER,
+  FOREIGN KEY (journey_id) REFERENCES journey(id),
+  FOREIGN KEY (trip_id) REFERENCES trip(id),
+  CONSTRAINT journey__trip__relation_pkey PRIMARY KEY (id)
+);
+
+```
+
+## Particiones
+
+- separacion fisica de datos
+- Estructura logica
+
+Cuando una tabla tiene cientos de miles de datos hacer consultas entre rangos requieren un alto consumo del computo del CPU
+
+por ello al particionar la tabla se segmenta la ubicacion de los datos de forma fisica en el disco, manteniendo las propiedades logicas a la hora de realizacion de consultas
+
+```sql
+-- tabla de bitacora de viaje
+
+CREATE TABLE IF NOT EXISTS public.trip_log
+(
+    id bigint NOT NULL DEFAULT nextval('trip_log_id_seq'::regclass),
+    id_trip integer,
+    date date
+) PARTITION BY RANGE (date);
+
+ALTER TABLE public.trip_log
+    OWNER to luis;
+
+-- se crea una particion para enero de 2010
+-- para poder insertar valores en ese rango de fechas
+CREATE TABLE trip_log_2010_01 PARTITION OF trip_log
+FOR VALUES FROM ('2010-01-01') TO ('2010-01-31');
+
+-- se inserta un valor que se encuentra entre el rango de fecha
+INSERT INTO public.trip_log(
+  id_trip, date)
+  VALUES (1, '2010-01-01');
+
+-- de esta forma permite realizar consultas de forma normal
+SELECT * FROM trip_log;
+```
+
+Otra de las ventajas de las tablas particionadas es que puedes utilizar la sentencia TRUNCATE, la cual elimina toda la información de una tabla, pero a nivel partición. Es decir, si tienes una tabla con 12 particiones (1 para cada mes del año) y deseas eliminar toda la información del mes de Enero; con la sentencia ALTER TABLE tabla TRUNCATE PARTITION enero; podrías eliminar dicha información sin afectar el resto.
+
+al usar las tablas particionadas no hace falta declarar el id como primary key ya que las llaves primarias que utilizara Postgresql son
+la columnas utilizadas para paticionar, en esta caso la fecha
+
+## Creación de Roles
+
+Los roles se asignan a los usuarios y poseen multiples funciones
+
+- Crear y eleminar (incluso otros roles)
+- Asginar atributos
+- Agrupar con otros Roles
+- Roles predeterminados
+
+Lo ideal en un servidor seria tener un rol para la creacion y borrado de base de datos y tablas, y un rol para la consulta y borrado de datos dentro de una tabla
+
+```sql
+postgres=# \h CREATE ROLE
+Command:     CREATE ROLE
+Description: define a new database role
+Syntax:
+CREATE ROLE name [ [ WITH ] option [ ... ] ]
+
+where option can be:
+
+      SUPERUSER | NOSUPERUSER
+    | CREATEDB | NOCREATEDB
+    | CREATEROLE | NOCREATEROLE
+    | INHERIT | NOINHERIT
+    | LOGIN | NOLOGIN
+    | REPLICATION | NOREPLICATION
+    | BYPASSRLS | NOBYPASSRLS
+    | CONNECTION LIMIT connlimit
+    | [ ENCRYPTED ] PASSWORD 'password' | PASSWORD NULL
+    | VALID UNTIL 'timestamp'
+    | IN ROLE role_name [, ...]
+    | IN GROUP role_name [, ...]
+    | ROLE role_name [, ...]
+    | ADMIN role_name [, ...]
+    | USER role_name [, ...]
+    | SYSID uid
+
+URL: https://www.postgresql.org/docs/13/sql-createrole.html
+```
+
+Despues de la version 9.3 de Postgresql ROLE y USER son lo mismo
+
+```sql
+CREATE ROLE usuario_consulta;
+```
+
+listar los roles
+
+```sql
+\dg
+```
+
+modificar un rol
+
+```sql
+-- agregandole la capacidad de hacer login
+ALTER ROLE usuario_consulta WITH LOGIN;
 ```
