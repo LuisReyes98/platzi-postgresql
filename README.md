@@ -314,4 +314,22 @@ modificar un rol
 ```sql
 -- agregandole la capacidad de hacer login
 ALTER ROLE usuario_consulta WITH LOGIN;
+
+-- agregando superuser
+ALTER ROLE usuario_consulta WITH SUPERUSER;
+
+-- Agregando contraseña
+ALTER ROLE usuario_consulta WITH PASSWORD 'etc123';
+```
+
+borrando roles
+
+```sql
+DROP ROLE usuario_consulta;
+```
+
+Dandole permisos de consulta a un usuario en un tabla
+
+```sql
+GRANT INSERT, SELECT, UPDATE, DELETE ON TABLE trip TO usuario_consulta;
 ```
