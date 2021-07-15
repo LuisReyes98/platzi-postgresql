@@ -333,3 +333,89 @@ Dandole permisos de consulta a un usuario en un tabla
 ```sql
 GRANT INSERT, SELECT, UPDATE, DELETE ON TABLE trip TO usuario_consulta;
 ```
+
+## Llaves foráneas
+
+Creacion de una realación foranea
+
+```sql
+CREATE TABLE IF NOT EXISTS public.trayecto
+(
+    id bigserial,
+    train_id integer,
+    PRIMARY KEY (id),
+    CONSTRAINT trayecto_train_fkey FOREIGN KEY (train_id)
+        REFERENCES public.train (id) MATCH SIMPLE
+        ON UPDATE CASCADE
+        ON DELETE CASCADE
+        NOT VALID
+);
+
+ALTER TABLE public.trayecto
+    OWNER to luis;
+```
+
+Agregar un constrain
+
+```sql
+ALTER TABLE trip
+  ADD CONSTRAINT trip_passenger_id_fkey FOREIGN KEY (passenger_id)
+    REFERENCES passenger (id) MATCH SIMPLE
+    ON UPDATE CASCADE
+    ON DELETE CASCADE;
+```
+
+Para actualizar un constrain primero se debe hacer drop del constrain anterior y luego se vuelve a crear
+
+```sql
+ALTER TABLE trip
+  DROP CONSTRAINT trip_passenger_id_fkey;
+
+ALTER TABLE trip
+  ADD CONSTRAINT trip_passenger_id_fkey
+    FOREIGN KEY (passenger_id)
+    REFERENCES passenger (id) MATCH SIMPLE
+    ON UPDATE CASCADE
+    ON DELETE CASCADE;
+```
+
+## Inserción y consulta de datos
+
+Insert de datos
+
+```SQL
+-- insertando valores en estacion
+INSERT INTO station(
+  name, address)
+  VALUES (?, ?);
+
+INSERT INTO public.station(
+  name, address)
+  VALUES ('Estacion Norte', 'St #203');
+
+-- insertando valores en trenes
+INSERT INTO train(
+  model, capacity)
+  VALUES (?, ?);
+
+INSERT INTO public.train(
+  model, capacity)
+  VALUES ('Frances 3004', 100);
+
+-- insert trayecto
+INSERT INTO public.journey(
+  name, station_id, train_id)
+  VALUES ('Centro Maracaibo', 1, 1);
+```
+
+Cambiando el id
+
+```sql
+UPDATE public.train
+  SET id=1
+  WHERE id = 2;
+```
+
+Con los CONSTRAINTS en cascada al cambiar el id de un registro este tambien cambia en los datos que lo referencian
+
+y al borrar un registro tambien se borran los registros en otras tablas que lo referencian
