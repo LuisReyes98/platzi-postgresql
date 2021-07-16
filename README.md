@@ -419,3 +419,14 @@ UPDATE public.train
 Con los CONSTRAINTS en cascada al cambiar el id de un registro este tambien cambia en los datos que lo referencian
 
 y al borrar un registro tambien se borran los registros en otras tablas que lo referencian
+
+### Otras notas
+
+Hay una situación importante sobre las claves foráneas (FK) que se explica en esta clase y me gustaría resaltarla un poco mas:
+Primeramente recordar del curso de Fundamentos de BD que a las tablas se les llama “independientes” cuando no tienen FK’s. Del mismo modo una tabla es “dependiente” cuando tiene al menos una FK, es decir, son tablas que dependen de tablas independientes.
+Es importante **al momento de crear tablas e insertar datos en ellas** , empezar siempre por las tablas independientes y una vez terminadas seguir con las dependientes
+
+## Inserción masiva de datos
+
+Herramienta para crear data falsa para hacer test de forma masiva
+[mockaroo](https://mockaroo.com/)
