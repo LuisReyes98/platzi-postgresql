@@ -193,6 +193,10 @@ CREATE TABLE IF NOT EXISTS trip(
   CONSTRAINT trip_pkey PRIMARY KEY (id)
 );
 
+ALTER TABLE trip
+  ADD COLUMN IF NOT EXISTS start_trip date,
+  ADD COLUMN IF NOT EXISTS end_trip date;
+
 -- trayecto
 CREATE TABLE IF NOT EXISTS journey(
   id BIGSERIAL NOT NULL,
