@@ -434,3 +434,121 @@ Es importante **al momento de crear tablas e insertar datos en ellas** , empezar
 
 Herramienta para crear data falsa para hacer test de forma masiva
 [mockaroo](https://mockaroo.com/)
+
+## Cruzar tablas: SQL JOIN
+
+Tipos de Join
+
+- JOIN (INNER)
+- LEFT [OUTER]
+- RIGT [OUTER]
+- FULL OUTER
+
+```SQL
+-- pasajeros que han tomado al menos un viaje
+SELECT * FROM passenger
+JOIN trip ON (trip.passenger_id = passenger.id);
+
+
+-- ver los pasajeros que no tienen ningun viaje
+SELECT * FROM passenger
+LEFT JOIN trip ON (trip.passenger_id = passenger.id)
+WHERE trip.id IS NULL;
+```
+
+## Funciones Especiales Principales
+
+- ON CONFLICT DO
+Realizar accion en caso de conflicto al insertar un dato que ya existe
+
+- RETURNING
+de hacer un insert devuelve los datos que acaban de ser insertados
+
+- LIKE / ILIKE
+Permite busquedas de String por similitud
+
+- IS / IS NOT
+Comparaciones de tipos de datos
+
+```sql
+-- hacer nada en un conflicto
+INSERT INTO public.station(
+  id, name, address)
+  VALUES (1, 'Nombre', 'Avenida Don Julio Centeno')
+  ON CONFLICT DO NOTHING;
+
+-- actualizar de haber conflicto
+INSERT INTO public.station(
+  id, name, address)
+  VALUES (1, 'Nombre', 'Avenida Don Julio Centeno')
+  ON CONFLICT(id) DO UPDATE SET name = 'Nombre', address= 'Adress';
+
+-- retorna todo lo que se inserto
+INSERT INTO public.station(
+  name, address)
+  VALUES ('Lorem DOLOR Nombre', 'Avenida Don Julio Centeno')
+RETURNING *;
+```
+
+LIKE / ILIKE
+
+```SQL
+-- % (porcentaje) es un comodin que se reemplaza por cualquiere valor
+SELECT name
+  FROM public.passenger
+  WHERE name LIKE 'o%';
+
+-- la diferencia en LIKE y ILIKE es que LIKE considera la diferencia entre mayusculas y minusculas
+-- mientras que ILIKE puede ser cualquiera
+SELECT name
+  FROM public.passenger
+  WHERE name ILIKE 'o%';
+```
+
+IS / IS NOT
+
+```SQL
+-- Ya que el valor null no es estandar la comparacion de si el valor es nulo es con IS
+SELECT *
+  FROM public.train
+  WHERE model IS NULL;
+```
+
+## Funciones Especiales Avanzadas
+
+- COALESCE
+Verifica entre dos parametros cual es nulo y retorna el que no es null
+
+- NULLIF
+Compara si dos campos son iguales y retorna null si es cierto
+
+- GREATEST
+retorna el valor mas grande de una lista
+
+- LEAST
+retorna el valor mas pequeño de una lista
+
+- BLOQUES ANONIMOS
+Permite construir condicionales como un campo
+
+```sql
+-- si el nombre es nulo retorna 'No aplica'
+SELECT id, COALESCE(name, 'No aplica') as name, address, birthdate
+  FROM public.passenger WHERE id = 1;
+
+-- retornara null
+SELECT NULLIF(0,0)
+
+```
+
+bloque CASE
+```sql
+SELECT id, name, address, birthdate,
+CASE
+WHEN birthdate > '1999-01-01' THEN
+'Niño'
+ELSE
+'MAYOR'
+END
+  FROM public.passenger;
+```
