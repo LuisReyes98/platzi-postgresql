@@ -625,3 +625,28 @@ DELETE FROM trip WHERE id = 6;
 
 SELECT * FROM trips_post_noon_mview;
 ```
+
+### Notas alumnos
+
+Agarra una consulta que se realice muchas veces y colocarla bajo un solo nombre.
+Centraliza muchos esfuerzos en una sola función.
+Vista volátil: Siempre que se haga la consulta en la vista, la BD hace la ejecución de la consulta en la BD, por lo que siempre se va a tener información reciente.
+Vista materializada: Hace la consulta una sola vez, y la información queda almacenada en memoria, la siguiente vez que se consulte, trae el dato almacenado, eso es bueno y malo a la vez, bueno porque la velocidad con la que se entrega la información es rápida, malo porque la información no es actualizada. Es ideal utilizar este tipo de vista en procesos que utilice días anteriores, porque el día de ayer, ya pasó y no hay razón para actualizarlo.
+Para crear una vista volátil en postgres, damos click derecho a views, create, view, le damos un nombre, y en la pestaña code escribimos o pegamos el código de la consulta que queremos guardar, la guardamos y para usar la vista usamos:
+
+```sql
+SELECT * FROM <nombre_vista>; y listo.
+```
+
+Para crear una vista materializada, primero creamos la consulta, y definimos si los datos nos interesan o no, luego, vamos a la opción materialized views, click derecho, create, materialized view. Se abre la ventana, le damos un nombre, termina con _mview, y en la pestaña Definition escribimos la consulta que necesitamos guardar. Guardamos.
+Al probarla en este momento nos lanza un error, ¿por qué? porque no tiene datos almacenados. Para almacenar datos usamos:
+
+```sql
+REFRESH MATERIALIZED VIEW <nombre vista>;
+```
+
+Y ahora si podemos consultarla:
+
+```sql
+SELECT * FROM <nombre_vista_mview>;
+```
