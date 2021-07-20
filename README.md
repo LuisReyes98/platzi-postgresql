@@ -186,16 +186,29 @@ CREATE TABLE IF NOT EXISTS station(
 );
 
 -- viaje
+-- CREATE TABLE IF NOT EXISTS trip(
+--   id BIGSERIAL NOT NULL,
+--   passenger_id INTEGER,
+--   FOREIGN KEY (passenger_id) REFERENCES passenger(id),
+--   CONSTRAINT trip_pkey PRIMARY KEY (id)
+-- );
+
+-- ALTER TABLE trip
+--   ADD COLUMN IF NOT EXISTS start_trip date,
+--   ADD COLUMN IF NOT EXISTS end_trip date;
+
+-- fix de la tabla
 CREATE TABLE IF NOT EXISTS trip(
   id BIGSERIAL NOT NULL,
   passenger_id INTEGER,
+  start_trip TIME WITHOUT TIME ZONE,
+  end_trip TIME WITHOUT TIME ZONE,
   FOREIGN KEY (passenger_id) REFERENCES passenger(id),
   CONSTRAINT trip_pkey PRIMARY KEY (id)
 );
 
-ALTER TABLE trip
-  ADD COLUMN IF NOT EXISTS start_trip date,
-  ADD COLUMN IF NOT EXISTS end_trip date;
+ALTER TABLE trip ALTER COLUMN  start_trip TYPE TIME WITHOUT TIME ZONE,
+ALTER COLUMN end_trip TYPE TIME WITHOUT TIME ZONE;
 
 -- trayecto
 CREATE TABLE IF NOT EXISTS journey(
@@ -542,13 +555,73 @@ SELECT NULLIF(0,0)
 ```
 
 bloque CASE
+
 ```sql
 SELECT id, name, address, birthdate,
 CASE
 WHEN birthdate > '1999-01-01' THEN
-'Niño'
+'Gen Z'
 ELSE
-'MAYOR'
+'Millennials'
 END
   FROM public.passenger;
+```
+
+## Vistas
+
+Existen dos tipos de vistas
+
+- Vistas Volatiles: Volatil
+la vista volatil siempre ejecuta la consulta de nuevo con los datos de la base de datos
+
+- Vistas Materializada: Persistente
+La vista materializada ejecuta la consulta una vez y guarda los resultados en memoria, esto tiene la desventaja de que si no se actualiza la vista materializada pueden ser datos viejos los que se consulten.
+
+En escencia es tomar una consulta y transformarla en una unica palabra
+
+vista volatil
+
+```sql
+-- vista volatil
+CREATE OR REPLACE VIEW public.passenger_generations
+ AS
+SELECT id, name, address, birthdate,
+CASE
+WHEN birthdate > '1999-01-01' THEN
+'Gen Z'
+ELSE
+'Millennials'
+END
+  FROM passenger;
+
+ALTER TABLE public.passenger_generations
+    OWNER TO luis;
+```
+
+Vista materializada
+
+```sql
+CREATE MATERIALIZED VIEW public.trips_post_noon_mview
+AS
+SELECT * FROM trip WHERE start_trip > '15:00:00'
+WITH NO DATA;
+
+ALTER TABLE public.trips_post_noon_mview
+    OWNER TO luis;
+```
+
+Refrescar la vista materializada
+
+```sql
+REFRESH MATERIALIZED VIEW trips_post_noon_mview;
+```
+
+Aunque se borren los datos si la vista materializada no se actuliza esta seguira mostrando los datos que se guardaron previamente, incluso si algunos se llegaron a borrar
+
+```sql
+DELETE FROM journey__trip__relation WHERE trip_id = 6;
+
+DELETE FROM trip WHERE id = 6;
+
+SELECT * FROM trips_post_noon_mview;
 ```
