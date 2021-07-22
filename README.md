@@ -650,3 +650,156 @@ Y ahora si podemos consultarla:
 ```sql
 SELECT * FROM <nombre_vista_mview>;
 ```
+
+## PL/SQL
+
+Procedural Language
+
+Permite utilizar codigo directamente dentro de la base de datos
+
+Se usa la palabra reservada DO para iniciar una PL
+
+y el uso de \$\$ pra abrir y cerrar el bloque de la funcion
+
+```sql
+$$ $$
+```
+
+Ejemplo
+
+```sql
+-- DO para el PL
+-- $$ para el abir y cierre del pl
+-- BEGIN y END para declarar que es un
+-- bloque de codigo lo que se esta usando
+DO $$
+BEGIN
+  RAISE NOTICE 'ALGO ESTA PASANDO';
+END
+$$
+```
+
+Recorrer una tabla con una PL
+
+```sql
+-- DO para el PL
+-- $$ para el abir y cierre del pl
+-- BEGIN y END para declarar que es un
+-- bloque de codigo lo que se esta usando
+DO $$
+-- DECLARE para declarar variables
+-- el tipo de dato de una fila es record
+-- asignar valores en PL es con :=
+DECLARE
+  rec record;
+BEGIN
+  FOR rec IN SELECT * FROM passenger LOOP
+    RAISE NOTICE 'UN Pasajero se llama %', rec.name;
+    -- rec.address
+    -- rec.id
+  END LOOP;
+END
+$$
+```
+
+Conteo de filas
+
+```sql
+DO $$
+DECLARE
+  rec record;
+  contador integer := 0;
+BEGIN
+  FOR rec IN SELECT * FROM passenger LOOP
+    -- RAISE NOTICE 'UN Pasajero se llama %', rec.name;
+    contador := contador + 1;
+  END LOOP;
+  RAISE NOTICE 'Conteo es %', contador;
+END
+$$
+```
+
+Creando una funcion
+
+```sql
+CREATE FUNCTION importantePL()
+ RETURNS void
+AS $$
+-- DECLARE para declarar variables
+-- el tipo de dato de una fila es record
+-- asignar valores en PL es con :=
+DECLARE
+  rec record;
+  contador integer := 0;
+BEGIN
+  FOR rec IN SELECT * FROM passenger LOOP
+    -- RAISE NOTICE 'UN Pasajero se llama %', rec.name;
+    contador := contador + 1;
+  END LOOP;
+  RAISE NOTICE 'Conteo es %', contador;
+END
+$$
+LANGUAGE 'plpgsql';
+```
+
+Llamando la función
+
+```sql
+SELECT importantePL();
+```
+
+Retornando un valor con la funcion
+
+```sql
+-- al cambiar el tipo de retorno de la funcion es necesario primero hacer DROP de esta funcion
+DROP FUNCTION importantepl();
+CREATE OR REPLACE FUNCTION importantePL()
+ RETURNS integer
+AS $$
+-- DECLARE para declarar variables
+-- el tipo de dato de una fila es record
+-- asignar valores en PL es con :=
+DECLARE
+  rec record;
+  contador integer := 0;
+BEGIN
+  FOR rec IN SELECT * FROM passenger LOOP
+    -- RAISE NOTICE 'UN Pasajero se llama %', rec.name;
+    contador := contador + 1;
+  END LOOP;
+  RAISE NOTICE 'Conteo es %', contador;
+  RETURN contador;
+END
+$$
+LANGUAGE 'plpgsql';
+
+SELECT importantePL();
+```
+
+Creado con Pg Admin
+El texto dentro de los \$\$ es indiferente y es mas un estandar para entender que es un bloque de codigo
+
+```sql
+CREATE FUNCTION public."importantePL"()
+  RETURNS integer
+  LANGUAGE 'plpgsql'
+AS $BODY$
+DECLARE
+  rec record;
+  contador integer := 0;
+BEGIN
+  FOR rec IN SELECT * FROM passenger LOOP
+    contador := contador + 1;
+  END LOOP;
+  RAISE NOTICE 'Conteo es %', contador;
+  RETURN contador;
+END
+$BODY$;
+```
+
+Pg Admin agrega comillas porque se estan usando mayusculas en el nombre
+
+```sql
+ALTER FUNCTION public."importantePL"()
+  RENAME TO impl;
+```
