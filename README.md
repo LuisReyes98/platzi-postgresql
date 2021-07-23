@@ -396,6 +396,26 @@ ALTER TABLE trip
     ON DELETE CASCADE;
 ```
 
+tabla journey__trip__relation
+
+```sql
+ALTER TABLE journey__trip__relation
+  DROP CONSTRAINT journey__trip__relation_journey_id_fkey,
+  DROP CONSTRAINT journey__trip__relation_trip_id_fkey;
+
+ALTER TABLE journey__trip__relation
+  ADD CONSTRAINT journey__trip__relation_journey_id_fkey
+    FOREIGN KEY (journey_id)
+    REFERENCES journey (id) MATCH SIMPLE
+    ON UPDATE CASCADE
+    ON DELETE CASCADE,
+  ADD CONSTRAINT journey__trip__relation_trip_id_fkey
+    FOREIGN KEY (trip_id)
+    REFERENCES trip (id) MATCH SIMPLE
+    ON UPDATE CASCADE
+    ON DELETE CASCADE;
+```
+
 ## Inserción y consulta de datos
 
 Insert de datos
@@ -802,4 +822,138 @@ Pg Admin agrega comillas porque se estan usando mayusculas en el nombre
 ```sql
 ALTER FUNCTION public."importantePL"()
   RENAME TO impl;
+```
+
+## Triggers
+
+Triggers o Disparadores
+
+Son acciones que se ejecutan cuando ocurren Acciones dentro de una tabla
+
+A las acciones a las cuales se les puede asignar un Trigger son:
+
+- Insert
+- Update
+- Delete
+
+Creando tabla de los conteos de la tabla de pasajeros
+
+```sql
+CREATE TABLE IF NOT EXISTS public.passenger_count
+(
+    total integer,
+    "time" time with time zone,
+    id bigserial,
+    PRIMARY KEY (id)
+);
+
+ALTER TABLE public.passenger_count
+    OWNER to luis;
+```
+
+Actualizando la funcion para hacer un insercion
+
+```sql
+CREATE OR REPLACE FUNCTION public.impl()
+    RETURNS integer
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE PARALLEL UNSAFE
+AS $BODY$
+DECLARE
+  rec record;
+  contador integer := 0;
+BEGIN
+  FOR rec IN SELECT * FROM passenger LOOP
+    contador := contador + 1;
+  END LOOP;
+  RAISE NOTICE 'Conteo es %', contador;
+  
+  -- insertando valor
+  INSERT INTO passenger_count (total, time)
+  VALUES (contador, now());
+  
+  RETURN contador;
+END
+$BODY$;
+```
+
+Cambiando la funcion a un Trigger
+
+```sql
+DROP FUNCTION impl();
+
+CREATE OR REPLACE FUNCTION public.impl()
+    RETURNS TRIGGER
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE PARALLEL UNSAFE
+AS $BODY$
+DECLARE
+  rec record;
+  contador integer := 0;
+BEGIN
+  FOR rec IN SELECT * FROM passenger LOOP
+    contador := contador + 1;
+  END LOOP;
+
+  -- insertando valor
+  INSERT INTO passenger_count (total, time)
+  VALUES (contador, now());
+END
+$BODY$;
+```
+
+Creando un trigger
+
+```sql
+CREATE TRIGGER mytrigger
+-- BEFORE
+-- INSTEAD OF
+AFTER INSERT -- UPDATE , DELETE
+ON passenger
+FOR EACH ROW
+EXECUTE PROCEDURE impl();
+```
+
+Acomando el ciclo de ejecucion de la trigger function
+
+```sql
+CREATE OR REPLACE FUNCTION public.impl()
+    RETURNS trigger
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE NOT LEAKPROOF
+AS $BODY$
+DECLARE
+  rec record;
+  contador integer := 0;
+BEGIN
+  FOR rec IN SELECT * FROM passenger LOOP
+    contador := contador + 1;
+  END LOOP;
+  
+  -- insertando valor
+  INSERT INTO passenger_count (total, time)
+  VALUES (contador, now());
+  
+  -- Los triggers tienen variables globales muy importantes
+  -- OLD es lo que estaba antes del cambio
+  -- NEW es lo que hay despues el cambio
+  -- Si retornamos NEW es decir que el cambio procede
+  -- Si retornamos OLD es decir que mantenga lo anterior y no ejecute el cambio
+  -- En un insert OLD no posee ningun valor
+  RETURN NEW;
+END
+$BODY$;
+```
+
+Trigger on DELETE
+
+```sql
+CREATE TRIGGER mytrigger2
+    AFTER DELETE
+    ON public.passenger
+    FOR EACH ROW
+    EXECUTE FUNCTION public.impl();
 ```
