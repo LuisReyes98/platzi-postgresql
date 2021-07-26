@@ -957,3 +957,154 @@ CREATE TRIGGER mytrigger2
     FOR EACH ROW
     EXECUTE FUNCTION public.impl();
 ```
+
+## Simulando una conexión a Bases de Datos remotas
+
+Obtener datos de hosts remotos
+
+dblink
+
+Primero debe verificarse que dblink esta instalado ya que es una extension de postgres y no viene por defecto
+
+Crear la extension dblink que postgres incluye pero no instala por defecto, esta extension debe crearse por cada base de datos individual
+
+```sql
+CREATE EXTENSION dblink;
+```
+
+```sql
+
+-- se deberian dejar espacio despues de cada instruccion ya que  son comandos diferentes
+SELECT * FROM
+dblink('dbname=remota 
+  port=5432 
+  host=127.0.0.1 
+  user=xxxx 
+  password=xxxx',
+  'SELECT id, fecha FROM vip;')
+  AS datos_remotos(id integer, "date" date);
+
+A la query se le debe dar el formato de como llegaran los datos
+```
+
+Haciendo cruce de datos con una tabla local
+
+```sql
+SELECT * FROM passenger
+JOIN 
+dblink('dbname=remota 
+  port=5432 
+  host=127.0.0.1 
+  user=xxxx 
+  password=xxxxxxx',
+'SELECT id, date FROM vip;')
+AS datos_remotos(id integer, "date" date)
+ON (passenger.id = datos_remotos.id);
+```
+
+Ya que ambas tablas se cruzan por la columna id, el JOIN se puede hacer con `USING(id)`
+
+```sql
+SELECT * FROM passenger
+JOIN 
+dblink('dbname=remota 
+  port=5432 
+  host=127.0.0.1 
+  user=xxxx 
+  password=xxxxxxx',
+'SELECT id, date FROM vip;')
+AS datos_remotos(id integer, "date" date)
+USING(id);
+```
+
+Al usar usign id el query retorna solo una columna de id en lugar de ambas columnas lo cual haria si se usara un `ON` para realizar el JOIN
+
+### Reto
+
+query a la tabla de pasageros desde la tabla remota
+
+```sql
+-- CREATE EXTENSION dblink;
+SELECT * FROM vip
+JOIN 
+dblink('dbname=transporte 
+  port=5432 
+  host=127.0.0.1 
+  user=xxxxxxx 
+  password=xxxxxxxxxxxx',
+'SELECT id, name, address, birthdate FROM passenger;')
+AS remote_passenger(id INTEGER, name CHARACTER VARYING, address CHARACTER VARYING, birthdate DATE)
+USING(id);
+```
+
+## Transacciones
+
+Permite ejecutar una serie de acciones y si alguna falla se retornan los cambios
+
+```sql
+BEGIN
+<consultas>
+COMMIT | ROLLBACK
+```
+
+COMMIT: ejecuta los cambios y los mantiene
+
+ROLLBACK: regresa los cambios y deja el estado anterior de los datos
+
+Si se esta trabajando en **pgadmin** , desactivar la opcion de **auto commit**
+
+```sql
+BEGIN;
+SELECT true;
+```
+
+de estar en pgadmin mostraria dos botones , de commit y rollback, ya que detecta que estas haciendo una transaccion
+
+```SQL
+BEGIN;
+SELECT true;
+
+SELECT NOW();
+```
+
+Insert como una transaccion
+
+```sql
+BEGIN;
+INSERT INTO public.station(
+  name, address)
+  VALUES ('Transaccion', 'Direccion 2');
+INSERT INTO public.train(
+  model, capacity)
+  VALUES ('modelo transaccion', 2893);
+```
+
+para concluir con la transaccion se ejecuta un COMMIT
+
+```SQL
+COMMIT;
+```
+
+Si una transaccion tiene multiples acciones y una falla se retornan todas, en este caso el primer insert no se mantiene porque el segundo falla
+
+```sql
+BEGIN;
+
+INSERT INTO public.train(
+  model, capacity)
+  VALUES ('modelo transacciooooon', 2893);
+INSERT INTO public.station(
+  id, name, address)
+  VALUES (108, 'Transaccion', 'Direccion 2');
+
+COMMIT;
+```
+
+ROLLBACK no suele ser usado en transacciones tan explicitas como insert
+
+En ciertos casos en los cuales usar ROLLBACK , puede ser para:
+
+- mantener un maximo de registros en una tabla
+- deshacer un DELETE
+
+Internamente POSTGRESQL usa ROLLBACK para todas las operaciones SQL que fallen
