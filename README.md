@@ -1104,7 +1104,69 @@ ROLLBACK no suele ser usado en transacciones tan explicitas como insert
 
 En ciertos casos en los cuales usar ROLLBACK , puede ser para:
 
-- mantener un maximo de registros en una tabla
+- mantener un maximo de registros en una tabla, con una condicion que se comprueba justo antes del rollback
 - deshacer un DELETE
 
 Internamente POSTGRESQL usa ROLLBACK para todas las operaciones SQL que fallen
+
+[Como trabajar con transacciones en PostgreSQL](https://www.enterprisedb.com/postgres-tutorials/how-work-postgresql-transactions)
+
+## Otras Extensiones para Postgres
+
+Postgresql tiene multiples Extensiones instaladas, pero no estan activadas por defecto
+
+[Extensiones existentes en postgres](https://www.postgresql.org/docs/13/contrib.html)
+
+### Funciones fuzzystrmatch
+
+levenshtein
+
+Encontrar la diferencia entre dos palabras
+
+Es basada en una formula matematica hecha por un matematico Ruso
+
+```sql
+CREATE EXTENSION fuzzystrmatch;
+
+-- Retorna la cantidad de letras que hay que cambiar para que ambas palabras sean iguales
+SELECT levenshtein('Luis', 'Louis');
+```
+
+difference
+
+Retorna un valor entre 0 y 4 , al comparar la pronunciacion de dos palabras en ingles , 0 es que no se parecen en pronunciacion y 4 es que son practicamente iguales al pronunciarce
+
+Es mucho mas compleja internamente ya que usa Machine Learning para comparar el sonido de las palabras al pronunciarse en ingles
+
+```sql
+SELECT difference ('oswaldo', 'osvaldo');
+
+SELECT difference ('beard', 'bird');
+
+SELECT difference ('Luis', 'Lous');
+```
+
+## Backups y Restauración
+
+pg_dumb y pg_restore
+[psql]
+
+Los **Blobs** son los datos binarios como imagenes, videos o archivos de texto
+
+Se recomienda no guardar información multimedia en la base de datos
+
+Comando de pg_dumb generado por pgadmin
+
+```sh
+/usr/bin/pg_dump --file "/home/luis/Documents/courses/platzi-postgresql/copia.sql" --host "localhost" --port "5432" --username "luis" --no-password --verbose --format=c --blobs "transporte"
+```
+
+PgAdmin por defecto genera los backups en tipo custom para optimizar el proceso, la desventaja es que este tipo de archivo solo puede ser leido por pgadmin o postgresql
+
+El tipo de backup plain se genera en un conjunto de instrucciones sql que deben ser ejecutadas
+
+Comando de pg_restore generado por pgadmin
+
+```sh
+/usr/bin/pg_restore --host "localhost" --port "5432" --username "luis" --no-password --dbname "transporte2" --verbose "/home/luis/Documents/courses/platzi-postgresql/copia.sql"
+```
