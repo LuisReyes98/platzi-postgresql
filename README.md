@@ -1170,3 +1170,67 @@ Comando de pg_restore generado por pgadmin
 ```sh
 /usr/bin/pg_restore --host "localhost" --port "5432" --username "luis" --no-password --dbname "transporte2" --verbose "/home/luis/Documents/courses/platzi-postgresql/copia.sql"
 ```
+
+## Mantenimiento
+
+Postgresql de forma automatica hace cierto nivel de mantenimiento como borrar las tablas y filas que estan vacias o no se usan
+
+El mantenimiento se puede hacer por base de datos o por tablas, mientras se hace mantenimiento a una tabla esta queda bloqueada y al hacer mantenimiento a una base de datos, todas las tablas quedan bloqueadas.
+
+Opciones de mantenimiento
+
+### VACUUM
+
+Se refiere a un vaciado
+La tabla queda limpia en su totalidad borrando todas las filas e indices que ya no son aplicables
+
+Si la limpieza duro mas que el tiempo que toma una nueva consulta en llegar, la tabla se bloqueara lo que significa que ningun nuevo proceso podra acceder a ella
+
+Puede ser
+
+- FULL
+
+Activarlo o desactivarlo puede tumbar la base de datos
+
+- FREEZE
+
+Se indica que congele la tabla hasta que termine la limpieza
+
+- ANALYZE
+
+Ejecuta un revision sin cambiar nada en la tabla y retorna informacion del estado actual de la tabla
+
+### ANALYZE
+
+No hace ningun cambio, solo ejecuta un revision en la tabla
+
+### REINDEX
+
+Aplica para tablas con indices eso incluye las llaves primarias
+
+El reindice es importante pues en tablas MUY grandes puede ocurrir que el indice es mas grande que la misma tabla
+
+### CLUSTER
+
+Es decirle al motor de base datos que reorganice la informacion en disco
+
+### Tips
+
+Lo mejor es dejar que POSTGRESQL haga el mantenimiento por su cuenta la mayoria del tiempo, en caso de que verdadera se vea un deficit en la base de datos y haga falta un mantenimiento es imperativo hacerlo en un horario que no afecte el sistema que utiliza la base de datos.
+
+## Introducción a Réplicas
+
+Son mecanismos que nos permiten evitar problemas de entrada y salida en los sitemas operativos
+
+Si la aplicacion crece de forma exponencial te encontraras con problemas de fisica y electronica pues puede que quieras ejecutar acciones a una velocidad mayor de la que permite el hardware
+
+POSTGRESQL bloquea una tabla mientras se modifica para que no la puedas leer , y mientras la lees para que no la puedas modificar
+
+en el caso que tengas miles de queries por segundo una peticion de datos puede tomar minutos si tiene que esperar a todas las demas
+
+**Siempre piensa en modo replica**
+Tener replicas es tener una base de datos de escritura y una de solo lectura y Postgresql se encarga de sincronizar los datos cada cierto tiempo
+
+Para lograrlo se deben tener multiples servidores de Postgresql uno como **master** y el otro como **slave/replica**
+
+## Implementación de Réplicas en Postgres
