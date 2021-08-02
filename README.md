@@ -1234,3 +1234,77 @@ Tener replicas es tener una base de datos de escritura y una de solo lectura y P
 Para lograrlo se deben tener multiples servidores de Postgresql uno como **master** y el otro como **slave/replica**
 
 ## Implementación de Réplicas en Postgres
+
+Las replicas consisten en tener multiples servidores de Postgresql con un minimo de un Master y una Replica
+
+para lograrlo se deben realizar hacer cambios en las configuraciones de la base de datos **Master**
+
+en **postgresql.conf**
+
+```conf
+# los archivos de bitacora se comporten como hot standby
+# es decir mantiene los archivos hasta que las replicas los utilizen
+wal_level = hot_standby
+
+# Este valor corresponde a la cantidad de replicas que vamos a tener
+max_wal_senders = 1
+
+# Como trataremos los archivos de bitacora, los archivaremos para que los puedan leer lar replicas
+archive_mode = on
+
+# Se especifica un comando de linux para copiar los archivos
+archive_command = 'cp %p /tmp/%f'
+```
+
+tambien en el archivo **pg_hba.conf** en la base de datos **Master**
+se debe agregar la ip de la base de datos para replicacion
+
+```conf
+local   all         all                               md5
+host    all         all         127.0.0.1/32          ident
+host    all         all         ::1/128               ident
+host    all         all         0.0.0.0/0             md5
+host    replication all         xxxxxxxxxx/32         trust
+```
+
+Ahora para la base de datos de **Replica** nos conectamos por SSH
+
+Detenemos el servicio
+
+```sh
+sudo service postgresql stop
+```
+
+Borramos los datos locales
+
+```sh
+rm -rf /var/lib/pgsql/data/*
+```
+
+Traemos todos los datos de master y los traemos a replica
+
+```sh
+pg_basebackup -U $user_de_master -R -D /var/lib/pgsql/data/ --host=$host_de_master_db --port=$puerto_de_la_master_db
+```
+
+Modificamos el archivo **postgresql.conf** de **replica**
+
+```conf
+# esto define este postgres como una base de datos de replica
+hot_standby = on
+```
+
+Ahora que los cambios estan hechos reiniciamos el servicio
+
+```sh
+sudo service postgresql start
+```
+
+A partir de ahora las configuraciones se han guardado y ya funcionan en modo de master y replica
+
+incluso la contraseña del servicio **replica** ahora sera la misma del servicio **master**
+
+a partir de ahora todos los cambios hechos en master se recrean en replica, y cualquier cambio hecho en replica no se ejecutara ya que estara en modo de solo lectura.
+
+## Otras buenas practicas
+
