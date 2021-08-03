@@ -1308,3 +1308,22 @@ a partir de ahora todos los cambios hechos en master se recrean en replica, y cu
 
 ## Otras buenas practicas
 
+Otro consejo es evitar los bloqueos por inserciones y borrados en la misma tabla
+
+un tip para evitar esto es renombrar las tablas
+
+[explicacion en pdf](https://static.platzi.com/media/public/uploads/cambiar-nombres-de-tablas-y-particiones_32ca477a-a619-491e-a42d-aaa94dec5abd.pdf)
+
+El objetivo es leer los datos de una tabla de datos crudos y una vez leída una fila se le da formato, se guarda en un registro de solo lectura y luego se borra esa misma fila de la tabla.
+
+El problema la tabla de datos crudos se le siguen insertando millones de datos por minuto lo cual hace que borrar una fila pueda demorar minutos en ejecutarse y lograr vaciar la tabla sería imposible.
+
+Entonces para poder realizar este proceso se realiza una transacción que renombre dos tablas que tienen la misma estructura, tabla_1 y tabla_offload  , se busca que intercambien el nombre para que de esta forma postgres siempre tenga una tabla a la cual escribir y la tabla de la cual se lee y se borran datos no se le estan realizando inserciones.
+
+De esta forma se logra vaciar la tabla de datos crudos y no hay perdida de datos.
+
+Otra cosa importante es realizar este renombramiento de tabla cada X periodo de tiempo una vez que la tabla de off load haya sido vaciada
+
+Ademas como menciona el pdf es importante considerar que:
+La solución final y escalable es usar
+particiones, toma más tiempo en implementar, pero es definitiva.
