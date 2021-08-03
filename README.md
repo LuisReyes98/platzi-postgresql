@@ -932,17 +932,18 @@ BEGIN
   FOR rec IN SELECT * FROM passenger LOOP
     contador := contador + 1;
   END LOOP;
-  
+
   -- insertando valor
   INSERT INTO passenger_count (total, time)
   VALUES (contador, now());
-  
+
   -- Los triggers tienen variables globales muy importantes
   -- OLD es lo que estaba antes del cambio
   -- NEW es lo que hay despues el cambio
   -- Si retornamos NEW es decir que el cambio procede
   -- Si retornamos OLD es decir que mantenga lo anterior y no ejecute el cambio
   -- En un insert OLD no posee ningun valor
+  -- si retorna NULL la operacion se cancela
   RETURN NEW;
 END
 $BODY$;
@@ -1327,3 +1328,7 @@ Otra cosa importante es realizar este renombramiento de tabla cada X periodo de 
 Ademas como menciona el pdf es importante considerar que:
 La solución final y escalable es usar
 particiones, toma más tiempo en implementar, pero es definitiva.
+
+## Otras notas
+
+IOPS son las siglas de Inputs Outputs Per Second
